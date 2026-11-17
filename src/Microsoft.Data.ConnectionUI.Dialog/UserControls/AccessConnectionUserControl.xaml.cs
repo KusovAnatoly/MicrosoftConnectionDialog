@@ -13,12 +13,22 @@ using System.Windows.Shapes;
 
 namespace Microsoft.Data.ConnectionUI.Dialog.UserControls;
 /// <summary>
-/// Interaction logic for OracleConnectionUIUserControl.xaml
+/// Interaction logic for AccessConnectionUserControl.xaml
 /// </summary>
-public partial class OracleConnectionUIUserControl : UserControl
+public partial class AccessConnectionUserControl : UserControl, IAccessConnectionControl
 {
-    public OracleConnectionUIUserControl()
+    public AccessConnectionUserControl()
     {
         InitializeComponent();
+    }
+
+    public void Initialize(IDataConnectionProperties connectionProperties)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void LoadProperties()
+    {
+        throw new NotImplementedException();
     }
 }

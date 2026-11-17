@@ -4,18 +4,15 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-using System.Collections.ObjectModel;
-
 namespace Microsoft.Data.ConnectionUI;
 
-using Microsoft.Data.ConnectionUI.Dialog.Resources;
-using Microsoft.Data.ConnectionUI.Dialog.UserControls;
+using Microsoft.Data.ConnectionUI.Resources;
 using System.Collections.ObjectModel;
 
 public sealed class DataProvider
 {
     private readonly IReadOnlyDictionary<string, string> _dataSourceDescriptions;
-    private readonly IReadOnlyDictionary<string, Type> _connectionUIControlTypes;
+    private readonly IReadOnlyDictionary<string, Type> _connectionControlTypes;
     private readonly IReadOnlyDictionary<string, Type> _connectionPropertiesTypes;
 
     public DataProvider(
@@ -25,7 +22,7 @@ public sealed class DataProvider
         string? description = null,
         Type? targetConnectionType = null,
         IDictionary<string, string>? dataSourceDescriptions = null,
-        IDictionary<string, Type>? connectionUIControlTypes = null,
+        IDictionary<string, Type>? connectionControlTypes = null,
         IDictionary<string, Type>? connectionPropertiesTypes = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(name);
@@ -39,7 +36,7 @@ public sealed class DataProvider
         TargetConnectionType = targetConnectionType;
 
         _dataSourceDescriptions = Copy(dataSourceDescriptions);
-        _connectionUIControlTypes = Copy(connectionUIControlTypes);
+        _connectionControlTypes = Copy(connectionControlTypes);
         _connectionPropertiesTypes = Copy(connectionPropertiesTypes);
     }
 
@@ -76,11 +73,11 @@ public sealed class DataProvider
         return Description;
     }
 
-    public IDataConnectionUIControl? CreateConnectionUIControl(
+    public IDataConnectionControl? CreateConnectionControl(
         DataSource? dataSource = null)
     {
         if (!TryGetType(
-            _connectionUIControlTypes,
+            _connectionControlTypes,
             dataSource,
             out var controlType))
         {
@@ -88,7 +85,7 @@ public sealed class DataProvider
         }
 
         return Activator.CreateInstance(controlType)
-            as IDataConnectionUIControl;
+            as IDataConnectionControl;
     }
 
     public IDataConnectionProperties? CreateConnectionProperties(
@@ -158,13 +155,13 @@ public sealed class DataProvider
         var controls = new Dictionary<string, Type>
         {
             [DataSource.MicrosoftSqlServerName] =
-                typeof(SqlConnectionUIUserControl),
+                typeof(ISqlServerConnectionControl),
 
             [DataSource.MicrosoftSqlServerFileName] =
-                typeof(SqlFileConnectionUIUserControl),
+                typeof(ISqlServerFileConnectionControl),
 
             [string.Empty] =
-                typeof(SqlConnectionUIUserControl)
+                typeof(ISqlServerConnectionControl)
         };
 
         var properties = new Dictionary<string, Type>
@@ -198,7 +195,7 @@ public sealed class DataProvider
         var controls = new Dictionary<string, Type>
         {
             [string.Empty] =
-                typeof(OracleConnectionUIUserControl)
+                typeof(IOracleConnectionControl)
         };
 
         var properties = new Dictionary<string, Type>
@@ -235,16 +232,16 @@ public sealed class DataProvider
         var controls = new Dictionary<string, Type>
         {
             [DataSource.MicrosoftSqlServerName] =
-                typeof(SqlConnectionUIUserControl),
+                typeof(ISqlServerConnectionControl),
 
             [DataSource.OracleName] =
-                typeof(OracleConnectionUIUserControl),
+                typeof(IOracleConnectionControl),
 
             [DataSource.MicrosoftAccessName] =
-                typeof(AccessConnectionUIUserControl),
+                typeof(IAccessConnectionControl),
 
             [string.Empty] =
-                typeof(OleDBConnectionUIUserControl)
+                typeof(IOleDBConnectionControl)
         };
 
         var properties = new Dictionary<string, Type>
@@ -284,7 +281,7 @@ public sealed class DataProvider
         var controls = new Dictionary<string, Type>
         {
             [string.Empty] =
-                typeof(OdbcConnectionUIUserControl)
+                typeof(IOdbcConnectionControl)
         };
 
         var properties = new Dictionary<string, Type>

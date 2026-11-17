@@ -13,12 +13,22 @@ using System.Windows.Shapes;
 
 namespace Microsoft.Data.ConnectionUI.Dialog.UserControls;
 /// <summary>
-/// Interaction logic for OleDBConnectionUIUserControl.xaml
+/// Interaction logic for OdbcConnectionUserControl.xaml
 /// </summary>
-public partial class OleDBConnectionUIUserControl : UserControl
+public partial class OdbcConnectionUserControl : UserControl, IOdbcConnectionControl
 {
-    public OleDBConnectionUIUserControl()
+    public OdbcConnectionUserControl()
     {
         InitializeComponent();
+    }
+
+    public void Initialize(IDataConnectionProperties connectionProperties)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void LoadProperties()
+    {
+        throw new NotImplementedException();
     }
 }

@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-using Microsoft.Data.ConnectionUI.Dialog.Resources;
+using Microsoft.Data.ConnectionUI.Resources;
 using System.ComponentModel;
 using System.Data.Common;
 

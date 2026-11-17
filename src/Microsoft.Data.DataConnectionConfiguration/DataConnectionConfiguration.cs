@@ -1,202 +1,201 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Microsoft.Data.ConnectionUI;
 using System.Xml.Linq;
-using System.IO;
 
 namespace Microsoft.Data.DataConnectionConfiguration;
 
 public class DataConnectionConfiguration : IDataConnectionConfiguration
 {
-    private const string configFileName = @"DataConnection.xml";
-    private string fullFilePath = null;
-    private XDocument xDoc = null;
+    private const string ConfigFileName = @"DataConnection.xml";
+    private readonly string _fullFilePath;
+    private readonly XDocument _xDoc;
+
+    public XElement RootElement { get; set; }
+
+    private DataSource? _unspecifiedDataSource;
 
     // Available data sources:
-    private IDictionary<string, DataSource> dataSources;
+    private IDictionary<string, DataSource> _dataSources = new Dictionary<string, DataSource>();
 
     // Available data providers: 
-    private IDictionary<string, DataProvider> dataProviders;
+    private IDictionary<string, DataProvider> _dataProviders = new Dictionary<string, DataProvider>();
 
     /// <summary>
     /// Constructor
     /// </summary>
     /// <param name="path">Configuration file path.</param>
-    public DataConnectionConfiguration(string path)
+    public DataConnectionConfiguration(string? path = null)
     {
-        if (!String.IsNullOrEmpty(path))
+        if (!string.IsNullOrEmpty(path))
         {
-            fullFilePath = Path.GetFullPath(Path.Combine(path, configFileName));
+            _fullFilePath = Path.GetFullPath(Path.Combine(path, ConfigFileName));
         }
         else
         {
-            fullFilePath = Path.Combine(System.Environment.CurrentDirectory, configFileName);
+            _fullFilePath = Path.Combine(Environment.CurrentDirectory, ConfigFileName);
         }
-        if (!String.IsNullOrEmpty(fullFilePath) && File.Exists(fullFilePath))
+
+        if (!string.IsNullOrEmpty(_fullFilePath) && File.Exists(_fullFilePath))
         {
-            xDoc = XDocument.Load(fullFilePath);
+            _xDoc = XDocument.Load(_fullFilePath);
         }
         else
         {
-            xDoc = new XDocument();
-            xDoc.Add(new XElement("ConnectionDialog", new XElement("DataSourceSelection")));
+            _xDoc = new XDocument();
+            _xDoc.Add(new XElement("ConnectionDialog", new XElement("DataSourceSelection")));
         }
 
-        this.RootElement = xDoc.Root;
+        if (_xDoc.Root is not XElement root)
+        {
+            throw new InvalidOperationException("Document has no root element.");
+        }
+
+        RootElement = root;
     }
 
-    public XElement RootElement { get; set; }
-
-    public void LoadConfiguration(DataConnectionDialog dialog)
+    public DataSource GetUnspecified()
     {
-        dialog.DataSources.Add(DataSource.SqlDataSource);
-        dialog.DataSources.Add(DataSource.SqlFileDataSource);
-        dialog.DataSources.Add(DataSource.OracleDataSource);
-        dialog.DataSources.Add(DataSource.AccessDataSource);
-        dialog.DataSources.Add(DataSource.OdbcDataSource);
-
-        dialog.UnspecifiedDataSource.Providers.Add(DataProvider.SqlDataProvider);
-        dialog.UnspecifiedDataSource.Providers.Add(DataProvider.OracleDataProvider);
-        dialog.UnspecifiedDataSource.Providers.Add(DataProvider.OleDBDataProvider);
-        dialog.UnspecifiedDataSource.Providers.Add(DataProvider.OdbcDataProvider);
-        dialog.DataSources.Add(dialog.UnspecifiedDataSource);
-
-        this.dataSources = new Dictionary<string, DataSource>();
-        this.dataSources.Add(DataSource.SqlDataSource.Name, DataSource.SqlDataSource);
-        this.dataSources.Add(DataSource.SqlFileDataSource.Name, DataSource.SqlFileDataSource);
-        this.dataSources.Add(DataSource.OracleDataSource.Name, DataSource.OracleDataSource);
-        this.dataSources.Add(DataSource.AccessDataSource.Name, DataSource.AccessDataSource);
-        this.dataSources.Add(DataSource.OdbcDataSource.Name, DataSource.OdbcDataSource);
-        this.dataSources.Add(dialog.UnspecifiedDataSource.DisplayName, dialog.UnspecifiedDataSource);
-
-        this.dataProviders = new Dictionary<string, DataProvider>();
-        this.dataProviders.Add(DataProvider.SqlDataProvider.Name, DataProvider.SqlDataProvider);
-        this.dataProviders.Add(DataProvider.OracleDataProvider.Name, DataProvider.OracleDataProvider);
-        this.dataProviders.Add(DataProvider.OleDBDataProvider.Name, DataProvider.OleDBDataProvider);
-        this.dataProviders.Add(DataProvider.OdbcDataProvider.Name, DataProvider.OdbcDataProvider);
-
-
-        DataSource ds = null;
-        string dsName = this.GetSelectedSource();
-        if (!String.IsNullOrEmpty(dsName) && this.dataSources.TryGetValue(dsName, out ds))
-        {
-            dialog.SelectedDataSource = ds;
-        }
-
-        DataProvider dp = null;
-        string dpName = this.GetSelectedProvider();
-        if (!String.IsNullOrEmpty(dpName) && this.dataProviders.TryGetValue(dpName, out dp))
-        {
-            dialog.SelectedDataProvider = dp;
-        }
+        _unspecifiedDataSource = DataSource.CreateUnspecified();
+        _unspecifiedDataSource.AddProvider(DataProvider.SqlDataProvider);
+        _unspecifiedDataSource.AddProvider(DataProvider.OracleDataProvider);
+        _unspecifiedDataSource.AddProvider(DataProvider.OleDBDataProvider);
+        _unspecifiedDataSource.AddProvider(DataProvider.OdbcDataProvider);
+        _dataSources.Add(_unspecifiedDataSource.DisplayName, _unspecifiedDataSource);
+        return _unspecifiedDataSource;
     }
 
-    public void SaveConfiguration(DataConnectionDialog dcd)
+    public ICollection<DataSource> GetDataSources()
     {
-        if (dcd.SaveSelection)
+        var dataSource = GetUnspecified();
+        var dataSources = new List<DataSource>()
         {
-            DataSource ds = dcd.SelectedDataSource;
-            if (ds != null)
-            {
-                if (ds == dcd.UnspecifiedDataSource)
-                {
-                    this.SaveSelectedSource(ds.DisplayName);
-                }
-                else
-                {
-                    this.SaveSelectedSource(ds.Name);
-                }
-            }
-            DataProvider dp = dcd.SelectedDataProvider;
-            if (dp != null)
-            {
-                this.SaveSelectedProvider(dp.Name);
-            }
+            DataSource.SqlDataSource,DataSource.SqlFileDataSource,
+            DataSource.OracleDataSource,
+            DataSource.AccessDataSource,
+            DataSource.OdbcDataSource,
+            dataSource
+        };
 
-            xDoc.Save(fullFilePath);
-        }
+        _dataSources.Add(DataSource.SqlDataSource.Name, DataSource.SqlDataSource);
+        _dataSources.Add(DataSource.SqlFileDataSource.Name, DataSource.SqlFileDataSource);
+        _dataSources.Add(DataSource.OracleDataSource.Name, DataSource.OracleDataSource);
+        _dataSources.Add(DataSource.AccessDataSource.Name, DataSource.AccessDataSource);
+        _dataSources.Add(DataSource.OdbcDataSource.Name, DataSource.OdbcDataSource);
+
+        _dataProviders.Add(DataProvider.SqlDataProvider.Name, DataProvider.SqlDataProvider);
+        _dataProviders.Add(DataProvider.OracleDataProvider.Name, DataProvider.OracleDataProvider);
+        _dataProviders.Add(DataProvider.OleDBDataProvider.Name, DataProvider.OleDBDataProvider);
+        _dataProviders.Add(DataProvider.OdbcDataProvider.Name, DataProvider.OdbcDataProvider);
+
+        return dataSources;
     }
 
-    public string GetSelectedSource()
+    public ICollection<DataProvider> GetDataProviders()
     {
-        try
+        var dataProviders = new List<DataProvider>()
         {
-            XElement xElem = this.RootElement.Element("DataSourceSelection");
-            XElement sourceElem = xElem.Element("SelectedSource");
-            if (sourceElem != null)
+            DataProvider.SqlDataProvider,
+            DataProvider.OracleDataProvider,
+            DataProvider.OleDBDataProvider,
+            DataProvider.OdbcDataProvider
+        };
+
+        _dataProviders.Add(DataProvider.SqlDataProvider.Name, DataProvider.SqlDataProvider);
+        _dataProviders.Add(DataProvider.OracleDataProvider.Name, DataProvider.OracleDataProvider);
+        _dataProviders.Add(DataProvider.OleDBDataProvider.Name, DataProvider.OleDBDataProvider);
+        _dataProviders.Add(DataProvider.OdbcDataProvider.Name, DataProvider.OdbcDataProvider);
+
+        return dataProviders;
+    }
+
+    public void SaveConfiguration(DataSource dataSource, DataProvider dataProvider)
+    {
+        if (dataSource is not null)
+        {
+            if (dataSource == _unspecifiedDataSource)
             {
-                return sourceElem.Value as string;
+                SaveSelectedSource(dataSource.DisplayName);
+            }
+            else
+            {
+                SaveSelectedSource(dataSource.Name);
             }
         }
-        catch
+        if (dataProvider is not null)
+        {
+            SaveSelectedProvider(dataProvider.Name);
+        }
+
+        _xDoc.Save(_fullFilePath);
+    }
+
+    public string? GetSelectedSource()
+    {
+        XElement xElem = RootElement.Element("DataSourceSelection") ??
+                throw new InvalidOperationException("RootElement has no DataSourceSelection element.");
+
+        XElement? sourceElem = xElem.Element("SelectedSource");
+
+        if (sourceElem is null)
         {
             return null;
         }
-        return null;
+
+        return sourceElem.Value;
     }
 
-    public string GetSelectedProvider()
+    public string? GetSelectedProvider()
     {
-        try
-        {
-            XElement xElem = this.RootElement.Element("DataSourceSelection");
-            XElement providerElem = xElem.Element("SelectedProvider");
-            if (providerElem != null)
-            {
-                return providerElem.Value as string;
-            }
-        }
-        catch
+        XElement xElem = RootElement.Element("DataSourceSelection") ??
+                throw new InvalidOperationException("RootElement has no DataSourceSelection element.");
+
+        XElement? providerElem = xElem.Element("SelectedProvider");
+
+        if (providerElem is null)
         {
             return null;
         }
-        return null;
+
+        return providerElem.Value;
     }
 
     public void SaveSelectedSource(string source)
     {
-        if (!String.IsNullOrEmpty(source))
+        if (!string.IsNullOrEmpty(source))
         {
-            try
+            XElement xElem = RootElement.Element("DataSourceSelection") ??
+                throw new InvalidOperationException("RootElement has no DataSourceSelection element.");
+
+            XElement sourceElem = xElem.Element("SelectedSource") ??
+                throw new InvalidOperationException("DataSourceSelection has no SelectedSource element.");
+
+            if (sourceElem is not null)
             {
-                XElement xElem = this.RootElement.Element("DataSourceSelection");
-                XElement sourceElem = xElem.Element("SelectedSource");
-                if (sourceElem != null)
-                {
-                    sourceElem.Value = source;
-                }
-                else
-                {
-                    xElem.Add(new XElement("SelectedSource", source));
-                }
+                sourceElem.Value = source;
             }
-            catch
+            else
             {
+                xElem.Add(new XElement("SelectedSource", source));
             }
         }
-
     }
 
     public void SaveSelectedProvider(string provider)
     {
-        if (!String.IsNullOrEmpty(provider))
+        if (!string.IsNullOrEmpty(provider))
         {
-            try
+            XElement xElem = RootElement.Element("DataSourceSelection") ??
+                    throw new InvalidOperationException("RootElement has no DataSourceSelection element.");
+
+            XElement providerElem = xElem.Element("SelectedSource") ??
+                throw new InvalidOperationException("DataSourceSelection has no SelectedSource element.");
+
+            if (providerElem != null)
             {
-                XElement xElem = this.RootElement.Element("DataSourceSelection");
-                XElement sourceElem = xElem.Element("SelectedProvider");
-                if (sourceElem != null)
-                {
-                    sourceElem.Value = provider;
-                }
-                else
-                {
-                    xElem.Add(new XElement("SelectedProvider", provider));
-                }
+                providerElem.Value = provider;
             }
-            catch
+            else
             {
+                xElem.Add(new XElement("SelectedProvider", provider));
             }
         }
     }

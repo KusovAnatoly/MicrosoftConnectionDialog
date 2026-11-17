@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.Data.ConnectionUI.Dialog.Resources {
+namespace Microsoft.Data.ConnectionUI.Resources {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace Microsoft.Data.ConnectionUI.Dialog.Resources {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Microsoft.Data.ConnectionUI.Dialog.Resources.Strings", typeof(Strings).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Microsoft.Data.ConnectionUI.Resources.Strings", typeof(Strings).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -102,16 +102,6 @@ namespace Microsoft.Data.ConnectionUI.Dialog.Resources {
         internal static string AdoDotNetConnectionProperties_NoProperties {
             get {
                 return ResourceManager.GetString("AdoDotNetConnectionProperties_NoProperties", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap blueInformation_16 {
-            get {
-                object obj = ResourceManager.GetObject("blueInformation_16", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
             }
         }
         

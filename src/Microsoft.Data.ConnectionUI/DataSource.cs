@@ -4,11 +4,9 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-using Microsoft.Data.ConnectionUI.Dialog.Resources;
-
 namespace Microsoft.Data.ConnectionUI;
 
-
+using Microsoft.Data.ConnectionUI.Resources;
 using System.Collections.ObjectModel;
 
 public sealed class DataSource
@@ -26,7 +24,7 @@ public sealed class DataSource
     private DataProvider? _defaultProvider;
 
     private DataSource()
-        : this(string.Empty, Strings.DataSource_UnspecifiedDisplayName)
+        : this(Strings.DataSource_UnspecifiedDisplayName, Strings.DataSource_UnspecifiedDisplayName)
     {
     }
 
@@ -159,7 +157,7 @@ public sealed class DataSource
         return source;
     }
 
-    internal void AddProvider(DataProvider provider)
+    public void AddProvider(DataProvider provider)
     {
         ArgumentNullException.ThrowIfNull(provider);
 
@@ -169,7 +167,7 @@ public sealed class DataSource
         }
     }
 
-    internal bool RemoveProvider(DataProvider provider)
+    public bool RemoveProvider(DataProvider provider)
     {
         ArgumentNullException.ThrowIfNull(provider);
 
@@ -183,13 +181,13 @@ public sealed class DataSource
         return removed;
     }
 
-    internal void ClearProviders()
+    public void ClearProviders()
     {
         _providers.Clear();
         _defaultProvider = null;
     }
 
-    internal static void AddProviders(DataSource dataSource)
+    public static void AddProviders(DataSource dataSource)
     {
         ArgumentNullException.ThrowIfNull(dataSource);
 
@@ -199,5 +197,5 @@ public sealed class DataSource
         dataSource.AddProvider(DataProvider.OdbcDataProvider);
     }
 
-    internal static DataSource CreateUnspecified() => new();
+    public static DataSource CreateUnspecified() => new();
 }

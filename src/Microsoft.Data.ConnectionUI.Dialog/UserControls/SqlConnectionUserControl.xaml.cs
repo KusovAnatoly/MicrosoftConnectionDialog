@@ -13,12 +13,22 @@ using System.Windows.Shapes;
 
 namespace Microsoft.Data.ConnectionUI.Dialog.UserControls;
 /// <summary>
-/// Interaction logic for SqlFileConnectionUIUserControl.xaml
+/// Interaction logic for SqlConnectionUserControl.xaml
 /// </summary>
-public partial class SqlFileConnectionUIUserControl : UserControl
+public partial class SqlConnectionUserControl : UserControl, ISqlServerConnectionControl
 {
-    public SqlFileConnectionUIUserControl()
+    public SqlConnectionUserControl()
     {
         InitializeComponent();
+    }
+
+    public void Initialize(IDataConnectionProperties connectionProperties)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void LoadProperties()
+    {
+        throw new NotImplementedException();
     }
 }

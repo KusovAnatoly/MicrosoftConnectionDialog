@@ -1,6 +1,6 @@
 ﻿namespace Microsoft.Data.ConnectionUI;
 
-public interface IDataConnectionUIControl
+public interface IDataConnectionControl
 {
     void Initialize(IDataConnectionProperties connectionProperties);
     void LoadProperties();

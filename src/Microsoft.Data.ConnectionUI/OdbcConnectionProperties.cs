@@ -9,6 +9,8 @@ using System.Text;
 
 namespace Microsoft.Data.ConnectionUI;
 
+public interface IOdbcConnectionControl : IDataConnectionControl;
+
 public class OdbcConnectionProperties : AdoDotNetConnectionProperties
 {
 	private static List<string>? _sqlNativeClientDrivers = null;
@@ -47,11 +49,11 @@ public class OdbcConnectionProperties : AdoDotNetConnectionProperties
 				{
 					if (driverDesc.Contains("Native") && driverDesc.Contains("Client"))
 					{
-						StringBuilder driverBuf = new StringBuilder(1024);
-						int len = NativeMethods.SQLGetPrivateProfileString(driverDesc, "Driver", "", driverBuf, driverBuf.Capacity, "ODBCINST.INI");
+						char[] driverBuf = new char[1024];
+						int len = NativeMethods.SQLGetPrivateProfileString(driverDesc, "Driver", "", driverBuf, driverBuf.Length, "ODBCINST.INI");
 						if (len > 0 && driverBuf.Length > 0)
 						{
-							string driver = driverBuf.ToString();
+							string driver = new string(driverBuf, 0, driverBuf.Length);
 							int start = driver.LastIndexOf('\\');
 							if (start > 0)
 							{

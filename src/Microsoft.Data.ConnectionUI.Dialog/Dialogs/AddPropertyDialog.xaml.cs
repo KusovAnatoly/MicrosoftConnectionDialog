@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 
-namespace Microsoft.Data.ConnectionUI.Dialog.Dialogs;
+namespace Microsoft.Data.ConnectionUI.Dialog;
 /// <summary>
 /// Interaction logic for AddPropertyDialog.xaml
 /// </summary>

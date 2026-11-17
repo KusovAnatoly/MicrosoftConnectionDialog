@@ -10,7 +10,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace Microsoft.Data.ConnectionUI.Dialog.Dialogs;
+namespace Microsoft.Data.ConnectionUI.Dialog;
 /// <summary>
 /// Interaction logic for ConnectionPropertiesDialog.xaml
 /// </summary>

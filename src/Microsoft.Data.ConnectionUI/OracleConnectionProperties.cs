@@ -26,36 +26,43 @@ public class OracleConnectionProperties : AdoDotNetConnectionProperties
 	{
 		get
 		{
-			if (!(ConnectionStringBuilder["Data Source"] is string) ||
-				(ConnectionStringBuilder["Data Source"] as string).Length == 0)
-			{
-				return false;
-			}
-			if (!(bool)ConnectionStringBuilder["Integrated Security"] &&
-				(!(ConnectionStringBuilder["User ID"] is string) ||
-				(ConnectionStringBuilder["User ID"] as string).Length == 0))
-			{
-				return false;
-			}
-			return true;
+            if (ConnectionStringBuilder["Data Source"] is not string { Length: > 0 })
+            {
+                return false;
+            }
+            if (ConnectionStringBuilder["Integrated Security"] is not true &&
+				ConnectionStringBuilder["User ID"] is not string { Length: > 0 })
+            {
+                return false;
+            }
+            return true;
 		}
 	}
 
-	protected override string ToTestString()
-	{
-		bool savedPooling = (bool)ConnectionStringBuilder["Pooling"];
-		bool wasDefault = !ConnectionStringBuilder.ShouldSerialize("Pooling");
-		ConnectionStringBuilder["Pooling"] = false;
-		string testString = ConnectionStringBuilder.ConnectionString;
-		ConnectionStringBuilder["Pooling"] = savedPooling;
-		if (wasDefault)
-		{
-			ConnectionStringBuilder.Remove("Pooling");
-		}
-		return testString;
-	}
+    protected override string ToTestString()
+    {
+        var savedPooling = ConnectionStringBuilder["Pooling"] is true;
+        var wasDefault = !ConnectionStringBuilder.ShouldSerialize("Pooling");
 
-	private void LocalReset()
+        try
+        {
+            ConnectionStringBuilder["Pooling"] = false;
+            return ConnectionStringBuilder.ConnectionString;
+        }
+        finally
+        {
+            if (wasDefault)
+            {
+                ConnectionStringBuilder.Remove("Pooling");
+            }
+            else
+            {
+                ConnectionStringBuilder["Pooling"] = savedPooling;
+            }
+        }
+    }
+
+    private void LocalReset()
 	{
 		// We always start with unicode turned on
 		this["Unicode"] = true;

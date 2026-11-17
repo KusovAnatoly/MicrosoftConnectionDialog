@@ -65,15 +65,15 @@ public class AdoDotNetConnectionProperties : IDataConnectionProperties, ICustomT
         return _connectionStringBuilder.ContainsKey(propertyName);
     }
 
-    public virtual object? this[string propertyName]
+    public virtual object this[string propertyName]
     {
         get
         {
             ArgumentException.ThrowIfNullOrEmpty(propertyName);
 
-            if (!_connectionStringBuilder.TryGetValue(propertyName, out var value))
+            if (!_connectionStringBuilder.TryGetValue(propertyName, out object? value))
             {
-                return null;
+                throw new ArgumentOutOfRangeException(propertyName);
             }
 
             if (_connectionStringBuilder.ShouldSerialize(propertyName))

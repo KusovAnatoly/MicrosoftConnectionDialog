@@ -15,287 +15,274 @@ public interface ISqlServerConnectionControl : IDataConnectionControl;
 public interface ISqlServerFileConnectionControl : IDataConnectionControl;
 public class SqlConnectionProperties : AdoDotNetConnectionProperties
 {
-	public SqlConnectionProperties()
-		: base("Microsoft.Data.SqlClient")
-	{
-		LocalReset();
-	}
+    public SqlConnectionProperties()
+        : base("Microsoft.Data.SqlClient")
+    {
+        LocalReset();
+    }
 
-	public override void Reset()
-	{
-		base.Reset();
-		LocalReset();
-	}
+    public override void Reset()
+    {
+        base.Reset();
+        LocalReset();
+    }
 
-	public override bool IsComplete
-	{
-		get
-		{
-			if (!(ConnectionStringBuilder["Data Source"] is string) ||
-				(ConnectionStringBuilder["Data Source"] as string).Length == 0)
-			{
-				return false;
-			}
-			if (!(bool)ConnectionStringBuilder["Integrated Security"] &&
-				(!(ConnectionStringBuilder["User ID"] is string) ||
-				(ConnectionStringBuilder["User ID"] as string).Length == 0))
-			{
-				return false;
-			}
-			return true;
-		}
-	}
+    public override bool IsComplete
+    {
+        get
+        {
+            if (ConnectionStringBuilder["Data Source"] is not string { Length: > 0 })
+            {
+                return false;
+            }
 
-	public override void Test()
-	{
-		string dataSource = ConnectionStringBuilder["Data Source"] as string;
-		if (dataSource == null || dataSource.Length == 0)
-		{
-			throw new InvalidOperationException(Strings.SqlConnectionProperties_MustSpecifyDataSource);
-		}
-		string database = ConnectionStringBuilder["Initial Catalog"] as string;
-		try
-		{
-			base.Test();
-		}
-		catch (SqlException e)
-		{
-			if (e.Number == SqlError_CannotOpenDatabase && database != null && database.Length > 0)
-			{
-				throw new InvalidOperationException(Strings.SqlConnectionProperties_CannotTestNonExistentDatabase);
-			}
-			else
-			{
-				throw;
-			}
-		}
-	}
+            if (ConnectionStringBuilder["Integrated Security"] is not true &&
+                ConnectionStringBuilder["User ID"] is not string { Length: > 0 })
+            {
+                return false;
+            }
 
-	protected override PropertyDescriptor DefaultProperty
-	{
-		get
-		{
-			return GetProperties(new Attribute[0])["DataSource"];
-		}
-	}
+            return true;
+        }
+    }
 
-	protected override string ToTestString()
-	{
-		bool savedPooling = (bool)ConnectionStringBuilder["Pooling"];
-		bool wasDefault = !ConnectionStringBuilder.ShouldSerialize("Pooling");
-		ConnectionStringBuilder["Pooling"] = false;
-		string testString = ConnectionStringBuilder.ConnectionString;
-		ConnectionStringBuilder["Pooling"] = savedPooling;
-		if (wasDefault)
-		{
-			ConnectionStringBuilder.Remove("Pooling");
-		}
-		return testString;
-	}
+    public override void Test()
+    {
+        if (ConnectionStringBuilder["Data Source"] is not string { Length: > 0 })
+        {
+            throw new InvalidOperationException(Strings.SqlConnectionProperties_MustSpecifyDataSource);
+        }
 
-	protected override void Inspect(DbConnection connection)
-	{
-		if (connection.ServerVersion.StartsWith("07", StringComparison.Ordinal) ||
-			connection.ServerVersion.StartsWith("08", StringComparison.Ordinal))
-		{
-			throw new NotSupportedException(Strings.SqlConnectionProperties_UnsupportedSqlVersion);
-		}
-	}
+        var database = ConnectionStringBuilder["Initial Catalog"] as string;
 
-	private void LocalReset()
-	{
-		// We always start with integrated security turned on
-		this["Integrated Security"] = true;
-	}
+        try
+        {
+            base.Test();
+        }
+        catch (SqlException e) when (e.Number == SqlError_CannotOpenDatabase && database is { Length: > 0 })
+        {
+            throw new InvalidOperationException(Strings.SqlConnectionProperties_CannotTestNonExistentDatabase, e);
+        }
+    }
 
-	private const int SqlError_CannotOpenDatabase = 4060;
+    protected override PropertyDescriptor? DefaultProperty => GetProperties(Array.Empty<Attribute>())["DataSource"];
+
+    protected override string ToTestString()
+    {
+        var savedPooling = ConnectionStringBuilder["Pooling"] is true;
+        var wasDefault = !ConnectionStringBuilder.ShouldSerialize("Pooling");
+
+        try
+        {
+            ConnectionStringBuilder["Pooling"] = false;
+            return ConnectionStringBuilder.ConnectionString;
+        }
+        finally
+        {
+            if (wasDefault)
+            {
+                ConnectionStringBuilder.Remove("Pooling");
+            }
+            else
+            {
+                ConnectionStringBuilder["Pooling"] = savedPooling;
+            }
+        }
+    }
+
+    protected override void Inspect(DbConnection connection)
+    {
+        if (connection.ServerVersion.StartsWith("07", StringComparison.Ordinal) ||
+            connection.ServerVersion.StartsWith("08", StringComparison.Ordinal))
+        {
+            throw new NotSupportedException(Strings.SqlConnectionProperties_UnsupportedSqlVersion);
+        }
+    }
+
+    private void LocalReset()
+    {
+        // We always start with integrated security turned on
+        this["Integrated Security"] = true;
+    }
+
+    private const int SqlError_CannotOpenDatabase = 4060;
 }
 
 public class SqlFileConnectionProperties : SqlConnectionProperties
 {
-	public SqlFileConnectionProperties()
-		: this(null)
-	{
-	}
+    public SqlFileConnectionProperties()
+        : this(null)
+    {
+    }
 
-	public SqlFileConnectionProperties(string defaultInstanceName)
-	{
-		_defaultDataSource = ".";
-		if (defaultInstanceName != null && defaultInstanceName.Length > 0)
-		{
-			_defaultDataSource += "\\" + defaultInstanceName;
-		}
-		else
-		{
-			DataSourceConverter conv = new DataSourceConverter();
-			System.ComponentModel.TypeConverter.StandardValuesCollection coll = conv.GetStandardValues(null);
-			if (coll.Count > 0)
-			{
-				_defaultDataSource = coll[0] as string;
-			}
-		}
-		LocalReset();
-	}
+    public SqlFileConnectionProperties(string? defaultInstanceName)
+    {
+        _defaultDataSource = ".";
+        if (defaultInstanceName is { Length: > 0 })
+        {
+            _defaultDataSource += "\\" + defaultInstanceName;
+        }
+        else
+        {
+            var conv = new DataSourceConverter();
+            TypeConverter.StandardValuesCollection coll = conv.GetStandardValues(null);
+            if (coll.Count > 0)
+            {
+                _defaultDataSource = coll[0] as string ?? throw new Exception("Failed to set Default Data Source");
+            }
+        }
+        LocalReset();
+    }
 
-	public override void Reset()
-	{
-		base.Reset();
-		LocalReset();
-	}
+    public override void Reset()
+    {
+        base.Reset();
+        LocalReset();
+    }
 
-	public override bool IsComplete
-	{
-		get
-		{
-			if (!base.IsComplete)
-			{
-				return false;
-			}
-			if (!(ConnectionStringBuilder["AttachDbFilename"] is string) ||
-				(ConnectionStringBuilder["AttachDbFilename"] as string).Length == 0)
-			{
-				return false;
-			}
-			return true;
-		}
-	}
+    public override bool IsComplete => base.IsComplete && ConnectionStringBuilder["AttachDbFilename"] is string { Length: > 0 };
 
-	public override void Test()
-	{
-		string attachDbFilename = ConnectionStringBuilder["AttachDbFilename"] as string;
-		try
-		{
-			if (attachDbFilename == null || attachDbFilename.Length == 0)
-			{
-				throw new InvalidOperationException(Strings.SqlFileConnectionProperties_NoFileSpecified);
-			}
-			ConnectionStringBuilder["AttachDbFilename"] = System.IO.Path.GetFullPath(attachDbFilename);
-			if (!System.IO.File.Exists(ConnectionStringBuilder["AttachDbFilename"] as string))
-			{
-				throw new InvalidOperationException(Strings.SqlFileConnectionProperties_CannotTestNonExistentMdf);
-			}
-			base.Test();
-		}
-		catch (SqlException e)
-		{
-			if (e.Number == -2) // timeout
-			{
-				throw new ApplicationException(e.Errors[0].Message + Environment.NewLine + Strings.SqlFileConnectionProperties_TimeoutReasons);
-			}
-			throw;
-		}
-		finally
-		{
-			if (attachDbFilename != null && attachDbFilename.Length > 0)
-			{
-				ConnectionStringBuilder["AttachDbFilename"] = attachDbFilename;
-			}
-		}
-	}
+    public override void Test()
+    {
+        if (ConnectionStringBuilder["AttachDbFilename"] is not string attachDbFilename || string.IsNullOrWhiteSpace(attachDbFilename))
+        {
+            throw new InvalidOperationException(Strings.SqlFileConnectionProperties_NoFileSpecified);
+        }
 
-	protected override PropertyDescriptorCollection GetProperties(Attribute[] attributes)
-	{
-		PropertyDescriptorCollection descriptors = base.GetProperties(attributes);
-		PropertyDescriptor dataSourceDescriptor = descriptors.Find("DataSource", true);
-		if (dataSourceDescriptor != null)
-		{
-			int index = descriptors.IndexOf(dataSourceDescriptor);
-			PropertyDescriptor[] descriptorArray = new PropertyDescriptor[descriptors.Count];
-			descriptors.CopyTo(descriptorArray, 0);
-			descriptorArray[index] = new DynamicPropertyDescriptor(dataSourceDescriptor, new TypeConverterAttribute(typeof(DataSourceConverter)));
-			(descriptorArray[index] as DynamicPropertyDescriptor).CanResetValueHandler = new CanResetValueHandler(CanResetDataSource);
-			(descriptorArray[index] as DynamicPropertyDescriptor).ResetValueHandler = new ResetValueHandler(ResetDataSource);
-			descriptors = new PropertyDescriptorCollection(descriptorArray, true);
-		}
-		return descriptors;
-	}
+        try
+        {
+            string fullPath = Path.GetFullPath(attachDbFilename);
+            ConnectionStringBuilder["AttachDbFilename"] = fullPath;
 
-	private void LocalReset()
-	{
-		this["Data Source"] = _defaultDataSource;
-		this["User Instance"] = true;
-		this["Connection Timeout"] = 30;
-	}
+            if (!File.Exists(fullPath))
+            {
+                throw new InvalidOperationException(Strings.SqlFileConnectionProperties_CannotTestNonExistentMdf);
+            }
 
-	private bool CanResetDataSource(object component)
-	{
-		return !(this["Data Source"] is string) || !(this["Data Source"] as string).Equals(_defaultDataSource, StringComparison.OrdinalIgnoreCase);
-	}
+            base.Test();
+        }
+        catch (SqlException e) when (e.Number == -2) // Timeout
+        {
+            string message = $"{e.Errors[0].Message}{Environment.NewLine}{Strings.SqlFileConnectionProperties_TimeoutReasons}";
+            throw new TimeoutException(message, e);
+        }
+        finally
+        {
+            ConnectionStringBuilder["AttachDbFilename"] = attachDbFilename;
+        }
+    }
 
-	private void ResetDataSource(object component)
-	{
-		this["Data Source"] = _defaultDataSource;
-	}
+    protected override PropertyDescriptorCollection GetProperties(Attribute[]? attributes)
+    {
+        PropertyDescriptorCollection descriptors = base.GetProperties(attributes);
 
-	private class DataSourceConverter : StringConverter
-	{
-		public DataSourceConverter()
-		{
-		}
+        if (descriptors.Find("DataSource", ignoreCase: true) is not { } dataSourceDescriptor)
+        {
+            return descriptors;
+        }
 
-		public override bool GetStandardValuesSupported(ITypeDescriptorContext context)
-		{
-			return true;
-		}
+        int index = descriptors.IndexOf(dataSourceDescriptor);
+        var descriptorArray = new PropertyDescriptor[descriptors.Count];
+        descriptors.CopyTo(descriptorArray, 0);
 
-		public override bool GetStandardValuesExclusive(ITypeDescriptorContext context)
-		{
-			return true;
-		}
+        descriptorArray[index] = new DynamicPropertyDescriptor(
+            dataSourceDescriptor,
+            new TypeConverterAttribute(typeof(DataSourceConverter)))
+        {
+            CanResetValueHandler = CanResetDataSource,
+            ResetValueHandler = ResetDataSource
+        };
 
-		public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext context)
-		{
-			if (_standardValues == null)
-			{
-				string[] dataSources = null;
+        return new PropertyDescriptorCollection(descriptorArray, readOnly: true);
+    }
 
-				if (HelpUtils.IsWow64())
-				{
-					List<String> dataSourceList = new List<string>();
-					// Read 64 registry key of SQL Server Instances Names. 
-					dataSourceList.AddRange(HelpUtils.GetValueNamesWow64("SOFTWARE\\Microsoft\\Microsoft SQL Server\\Instance Names\\SQL", NativeMethods.KEY_WOW64_64KEY | NativeMethods.KEY_QUERY_VALUE));
-					// Read 32 registry key of SQL Server Instances Names. 
-					dataSourceList.AddRange(HelpUtils.GetValueNamesWow64("SOFTWARE\\Microsoft\\Microsoft SQL Server\\Instance Names\\SQL", NativeMethods.KEY_WOW64_32KEY | NativeMethods.KEY_QUERY_VALUE));
-					dataSources = dataSourceList.ToArray();
-				}
-				else
-				{
-					// Look in the registry for all local SQL Server instances
-					Win32.RegistryKey key = Win32.Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Microsoft SQL Server\\Instance Names\\SQL");
-					if (key != null)
-					{
-						using (key)
-						{
-							dataSources = key.GetValueNames();
-						} // key is Disposed here
-					}
-				}
+    private void LocalReset()
+    {
+        this["Data Source"] = _defaultDataSource;
+        this["User Instance"] = true;
+        this["Connection Timeout"] = 30;
+    }
 
-				if (dataSources != null)
-				{
-					for (int i = 0; i < dataSources.Length; i++)
-					{
-						if (String.Equals(dataSources[i], "MSSQLSERVER", StringComparison.OrdinalIgnoreCase))
-						{
-							dataSources[i] = ".";
-						}
-						else
-						{
-							dataSources[i] = ".\\" + dataSources[i];
-						}
-					}
-					_standardValues = new StandardValuesCollection(dataSources);
-				}
-				else
-				{
-					_standardValues = new StandardValuesCollection(new string[0]);
-				}
-			}
-			return _standardValues;
-		}
+    private bool CanResetDataSource(object component) =>
+        this["Data Source"] is not string dataSource || !string.Equals(dataSource, _defaultDataSource, StringComparison.OrdinalIgnoreCase);
 
-		private StandardValuesCollection _standardValues;
-	}
+    private void ResetDataSource(object component)
+    {
+        this["Data Source"] = _defaultDataSource;
+    }
 
-	private string _defaultDataSource;
+    private class DataSourceConverter : StringConverter
+    {
+        public DataSourceConverter()
+        {
+        }
+
+        public override bool GetStandardValuesSupported(ITypeDescriptorContext? context) => true;
+
+        public override bool GetStandardValuesExclusive(ITypeDescriptorContext? context) => true;
+
+        public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext? context)
+        {
+            if (_standardValues is not null)
+            {
+                return _standardValues;
+            }
+
+            string[]? dataSources = null;
+
+            if (HelpUtils.IsWow64())
+            {
+                var dataSourceList = new List<string>();
+                // Read 64 registry key of SQL Server Instances Names. 
+                dataSourceList.AddRange(
+                    HelpUtils.GetValueNamesWow64(
+                        "SOFTWARE\\Microsoft\\Microsoft SQL Server\\Instance Names\\SQL",
+                        NativeMethods.KEY_WOW64_64KEY | NativeMethods.KEY_QUERY_VALUE));
+                // Read 32 registry key of SQL Server Instances Names. 
+                dataSourceList.AddRange(
+                    HelpUtils.GetValueNamesWow64(
+                        "SOFTWARE\\Microsoft\\Microsoft SQL Server\\Instance Names\\SQL",
+                        NativeMethods.KEY_WOW64_32KEY | NativeMethods.KEY_QUERY_VALUE));
+                dataSources = dataSourceList.ToArray();
+            }
+            else
+            {
+                // Look in the registry for all local SQL Server instances
+                Win32.RegistryKey? key = Win32.Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Microsoft SQL Server\\Instance Names\\SQL");
+                if (key is not null)
+                {
+                    using (key)
+                    {
+                        dataSources = key.GetValueNames();
+                    }
+                }
+            }
+
+            if (dataSources is not null)
+            {
+                for (int i = 0; i < dataSources.Length; i++)
+                {
+                    if (string.Equals(dataSources[i], "MSSQLSERVER", StringComparison.OrdinalIgnoreCase))
+                    {
+                        dataSources[i] = ".";
+                    }
+                    else
+                    {
+                        dataSources[i] = ".\\" + dataSources[i];
+                    }
+                }
+                _standardValues = new StandardValuesCollection(dataSources);
+            }
+            else
+            {
+                _standardValues = new StandardValuesCollection(new string[0]);
+            }
+
+            return _standardValues;
+        }
+
+        private StandardValuesCollection? _standardValues;
+    }
+
+    private string _defaultDataSource;
 }

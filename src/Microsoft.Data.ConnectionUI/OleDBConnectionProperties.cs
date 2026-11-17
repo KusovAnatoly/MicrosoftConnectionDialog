@@ -32,99 +32,75 @@ public class OleDBConnectionProperties : AdoDotNetConnectionProperties
 		}
 	}
 
-	public override bool IsComplete
-	{
-		get
-		{
-			if (!(ConnectionStringBuilder["Provider"] is string) ||
-				(ConnectionStringBuilder["Provider"] as string).Length == 0)
-			{
-				return false;
-			}
-			return true;
-		}
-	}
+    public override bool IsComplete => ConnectionStringBuilder["Provider"] is string { Length: > 0 };
 
-	protected override PropertyDescriptorCollection GetProperties(Attribute[] attributes)
+    protected override PropertyDescriptorCollection GetProperties(Attribute[]? attributes)
 	{
 		PropertyDescriptorCollection descriptors = base.GetProperties(attributes);
 		if (_disableProviderSelection)
 		{
-			PropertyDescriptor providerDescriptor = descriptors.Find("Provider", true);
-			if (providerDescriptor != null)
+			PropertyDescriptor? providerDescriptor = descriptors.Find("Provider", true);
+			if (providerDescriptor is not null)
 			{
 				int index = descriptors.IndexOf(providerDescriptor);
 				PropertyDescriptor[] descriptorArray = new PropertyDescriptor[descriptors.Count];
 				descriptors.CopyTo(descriptorArray, 0);
 				descriptorArray[index] = new DynamicPropertyDescriptor(providerDescriptor, ReadOnlyAttribute.Yes);
-				(descriptorArray[index] as DynamicPropertyDescriptor).CanResetValueHandler = new CanResetValueHandler(CanResetProvider);
+				((DynamicPropertyDescriptor)descriptorArray[index]).CanResetValueHandler = new CanResetValueHandler(CanResetProvider);
 				descriptors = new PropertyDescriptorCollection(descriptorArray, true);
 			}
 		}
 		return descriptors;
 	}
 
-	/// <summary>
-	/// Gets the registered OLE DB providers as an array of ProgIDs.
-	/// </summary>
-	public static List<string> GetRegisteredProviders()
-	{
-		// Get the sources rowset for the root OLE DB enumerator
-		Type rootEnumeratorType = Type.GetTypeFromCLSID(NativeMethods.CLSID_OLEDB_ENUMERATOR);
-		OleDbDataReader dr = OleDbEnumerator.GetEnumerator(rootEnumeratorType);
+    /// <summary>
+    /// Gets the registered OLE DB providers as an array of ProgIDs.
+    /// </summary>
+    public static List<string> GetRegisteredProviders()
+    {
+        // Get the sources rowset for the root OLE DB enumerator
+        Type rootEnumeratorType = Type.GetTypeFromCLSID(NativeMethods.CLSID_OLEDB_ENUMERATOR)
+            ?? throw new InvalidOperationException("Could not retrieve type from CLSID.");
 
-		// Read the CLSIDs of each data source (not binders or enumerators)
-		Dictionary<string, string> sources = new Dictionary<string, string>(); // avoids duplicate entries
-		using (dr)
-		{
-			while (dr.Read())
-			{
-				int type = (int)dr["SOURCES_TYPE"];
-				if (type == NativeMethods.DBSOURCETYPE_DATASOURCE_TDP ||
-					type == NativeMethods.DBSOURCETYPE_DATASOURCE_MDP)
-				{
-					sources[dr["SOURCES_CLSID"] as string] = null;
-				}
-			}
-		} // reader is disposed here
+        // Read the CLSIDs of each data source (not binders or enumerators)
+        HashSet<string> sourceClsids = new(StringComparer.OrdinalIgnoreCase);
+        using (OleDbDataReader dataReader = OleDbEnumerator.GetEnumerator(rootEnumeratorType))
+        {
+            while (dataReader.Read())
+            {
+                if (dataReader["SOURCES_TYPE"] is int type
+                    and (NativeMethods.DBSOURCETYPE_DATASOURCE_TDP or NativeMethods.DBSOURCETYPE_DATASOURCE_MDP)
+                    && dataReader["SOURCES_CLSID"] is string clsid)
+                {
+                    sourceClsids.Add(clsid);
+                }
+            }
+        }
 
-		// Get the ProgID for each data source
-		List<string> sourceProgIds = new List<string>(sources.Count);
-		Microsoft.Win32.RegistryKey key = Microsoft.Win32.Registry.ClassesRoot.OpenSubKey("CLSID");
-		using (key)
-		{
-			foreach (KeyValuePair<string, string> source in sources)
-			{
-				Microsoft.Win32.RegistryKey subKey = key.OpenSubKey(source.Key + "\\ProgID");
-				// if this subkey does not exist, ignore it.
-				if (subKey != null)
-				{
-					using (subKey)
-					{
-						sourceProgIds.Add(subKey.GetValue(null) as string);
-					} // subKey is disposed here
-				}
-			}
-		} // key is disposed here
+        // Get the ProgID for each data source
+        using Win32.RegistryKey clsidKey = Win32.Registry.ClassesRoot.OpenSubKey("CLSID")
+            ?? throw new InvalidOperationException("Could not retrieve CLSID key.");
 
-		// Sort the prog ID array by name
-		sourceProgIds.Sort();
+        var sourceProgIds = new List<string>(sourceClsids.Count);
+        foreach (string clsid in sourceClsids)
+        {
+            using Win32.RegistryKey? subKey = clsidKey.OpenSubKey($@"{clsid}\ProgID");
+            if (subKey?.GetValue(null) is string progId)
+            {
+                sourceProgIds.Add(progId);
+            }
+        }
 
-		// The OLE DB provider for ODBC is not supported by the OLE DB .NET provider, so remove it
-		while (sourceProgIds.Contains("MSDASQL.1"))
-		{
-			sourceProgIds.Remove("MSDASQL.1");
-		}
+        // Remove the unsupported OLE DB provider for ODBC, then sort
+        sourceProgIds.RemoveAll(static id => string.Equals(id, "MSDASQL.1", StringComparison.OrdinalIgnoreCase));
+        sourceProgIds.Sort(StringComparer.Ordinal);
 
-		return sourceProgIds;
-	}
+        return sourceProgIds;
+    }
 
-	private bool CanResetProvider(object component)
-	{
-		return false;
-	}
+    private bool CanResetProvider(object component) => false;
 
-	private bool _disableProviderSelection;
+    private bool _disableProviderSelection;
 }
 
 public class OleDBSpecializedConnectionProperties : OleDBConnectionProperties
@@ -142,7 +118,7 @@ public class OleDBSpecializedConnectionProperties : OleDBConnectionProperties
 		LocalReset();
 	}
 
-	protected override PropertyDescriptorCollection GetProperties(Attribute[] attributes)
+	protected override PropertyDescriptorCollection GetProperties(Attribute[]? attributes)
 	{
 		bool disableProviderSelection = DisableProviderSelection;
 		try
@@ -188,37 +164,33 @@ public class OleDBSqlConnectionProperties : OleDBSpecializedConnectionProperties
 			{
 				return false;
 			}
-			if (!(ConnectionStringBuilder["Data Source"] is string) ||
-				(ConnectionStringBuilder["Data Source"] as string).Length == 0)
+			if (ConnectionStringBuilder["Data Source"] is not string { Length: > 0 })
 			{
 				return false;
 			}
-			if ((ConnectionStringBuilder["Integrated Security"] == null ||
-				!ConnectionStringBuilder["Integrated Security"].ToString().Equals("SSPI", StringComparison.OrdinalIgnoreCase)) &&
-				(!(ConnectionStringBuilder["User ID"] is string) ||
-				(ConnectionStringBuilder["User ID"] as string).Length == 0))
-			{
-				return false;
-			}
-			return true;
+			if (!string.Equals(ConnectionStringBuilder["Integrated Security"]?.ToString(), "SSPI", StringComparison.OrdinalIgnoreCase) &&
+				ConnectionStringBuilder["User ID"] is not string { Length: > 0 })
+            {
+                return false;
+            }
+            return true;
 		}
 	}
 
-	protected override PropertyDescriptorCollection GetProperties(Attribute[] attributes)
+	protected override PropertyDescriptorCollection GetProperties(Attribute[]? attributes)
 	{
 		PropertyDescriptorCollection descriptors = base.GetProperties(attributes);
 		if (SqlNativeClientRegistered)
 		{
-			DynamicPropertyDescriptor providerDescriptor = descriptors.Find("Provider", true) as DynamicPropertyDescriptor;
-			if (providerDescriptor != null)
-			{
-				if (!DisableProviderSelection)
-				{
-					providerDescriptor.SetIsReadOnly(false);
-				}
-				providerDescriptor.SetConverterType(typeof(SqlProviderConverter));
-			}
-		}
+            if (descriptors.Find("Provider", true) is DynamicPropertyDescriptor providerDescriptor)
+            {
+                if (!DisableProviderSelection)
+                {
+                    providerDescriptor.SetIsReadOnly(false);
+                }
+                providerDescriptor.SetConverterType(typeof(SqlProviderConverter));
+            }
+        }
 		return descriptors;
 	}
 
@@ -264,17 +236,14 @@ public class OleDBSqlConnectionProperties : OleDBSpecializedConnectionProperties
 		{
 			if (!_gotSqlNativeClientRegistered)
 			{
-				Microsoft.Win32.RegistryKey key = null;
+				Win32.RegistryKey? key = null;
 				try
 				{
 					_sqlNativeClientRegistered = SqlNativeClientProviders.Count > 0;
 				}
 				finally
 				{
-					if (key != null)
-					{
-						key.Close();
-					}
+					key?.Close();
 				}
 				_gotSqlNativeClientRegistered = true;
 			}
@@ -283,7 +252,7 @@ public class OleDBSqlConnectionProperties : OleDBSpecializedConnectionProperties
 	}
 
 	private static bool _sqlNativeClientRegistered;
-	private static List<string> _sqlNativeClientProviders = null;
+	private static List<string>? _sqlNativeClientProviders = null;
 	private static bool _gotSqlNativeClientRegistered;
 
 	private class SqlProviderConverter : StringConverter
@@ -292,27 +261,14 @@ public class OleDBSqlConnectionProperties : OleDBSpecializedConnectionProperties
 		{
 		}
 
-		public override bool GetStandardValuesSupported(ITypeDescriptorContext context)
+        public override bool GetStandardValuesSupported(ITypeDescriptorContext? context) => true;
+
+        public override bool GetStandardValuesExclusive(ITypeDescriptorContext? context) => true;
+
+        public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext? context)
 		{
-			return true;
-		}
-
-		public override bool GetStandardValuesExclusive(ITypeDescriptorContext context)
-		{
-			return true;
-		}
-
-		public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext context)
-		{
-			List<string> stdCollection = new List<string>();
-			stdCollection.Add("SQLOLEDB");
-
-			foreach (string provider in SqlNativeClientProviders)
-			{
-				stdCollection.Add(provider);
-			}
-
-			return new StandardValuesCollection(stdCollection);
+			List<string> stdCollection = ["SQLOLEDB", .. SqlNativeClientProviders];
+            return new StandardValuesCollection(stdCollection);
 		}
 	}
 }
@@ -324,27 +280,7 @@ public class OleDBOracleConnectionProperties : OleDBSpecializedConnectionPropert
 	{
 	}
 
-	public override bool IsComplete
-	{
-		get
-		{
-			if (!base.IsComplete)
-			{
-				return false;
-			}
-			if (!(ConnectionStringBuilder["Data Source"] is string) ||
-				(ConnectionStringBuilder["Data Source"] as string).Length == 0)
-			{
-				return false;
-			}
-			if ((!(ConnectionStringBuilder["User ID"] is string) ||
-				(ConnectionStringBuilder["User ID"] as string).Length == 0))
-			{
-				return false;
-			}
-			return true;
-		}
-	}
+    public override bool IsComplete => base.IsComplete && ConnectionStringBuilder["Data Source"] is string { Length: > 0 } && ConnectionStringBuilder["User ID"] is string { Length: > 0 };
 }
 
 public class OleDBAccessConnectionProperties : OleDBSpecializedConnectionProperties
@@ -366,7 +302,7 @@ public class OleDBAccessConnectionProperties : OleDBSpecializedConnectionPropert
 		set
 		{
 			base[propertyName] = value;
-			if (String.Equals(propertyName, "Provider", StringComparison.OrdinalIgnoreCase))
+			if (string.Equals(propertyName, "Provider", StringComparison.OrdinalIgnoreCase))
 			{
 				if (value != null && value != DBNull.Value)
 				{
@@ -377,7 +313,7 @@ public class OleDBAccessConnectionProperties : OleDBSpecializedConnectionPropert
 					_userChangedProvider = false;
 				}
 			}
-			if (String.Equals(propertyName, "Data Source", StringComparison.Ordinal))
+			if (string.Equals(propertyName, "Data Source", StringComparison.Ordinal))
 			{
 				OnDataSourceChanged(ConnectionStringBuilder, EventArgs.Empty);
 			}
@@ -387,11 +323,11 @@ public class OleDBAccessConnectionProperties : OleDBSpecializedConnectionPropert
 	public override void Remove(string propertyName)
 	{
 		base.Remove(propertyName);
-		if (String.Equals(propertyName, "Provider", StringComparison.OrdinalIgnoreCase))
+		if (string.Equals(propertyName, "Provider", StringComparison.OrdinalIgnoreCase))
 		{
 			_userChangedProvider = false;
 		}
-		if (String.Equals(propertyName, "Data Source", StringComparison.Ordinal))
+		if (string.Equals(propertyName, "Data Source", StringComparison.Ordinal))
 		{
 			OnDataSourceChanged(ConnectionStringBuilder, EventArgs.Empty);
 		}
@@ -400,46 +336,30 @@ public class OleDBAccessConnectionProperties : OleDBSpecializedConnectionPropert
 	public override void Reset(string propertyName)
 	{
 		base.Reset(propertyName);
-		if (String.Equals(propertyName, "Provider", StringComparison.OrdinalIgnoreCase))
+		if (string.Equals(propertyName, "Provider", StringComparison.OrdinalIgnoreCase))
 		{
 			_userChangedProvider = false;
 		}
-		if (String.Equals(propertyName, "Data Source", StringComparison.Ordinal))
+		if (string.Equals(propertyName, "Data Source", StringComparison.Ordinal))
 		{
 			OnDataSourceChanged(ConnectionStringBuilder, EventArgs.Empty);
 		}
 	}
 
-	public override bool IsComplete
-	{
-		get
-		{
-			if (!base.IsComplete)
-			{
-				return false;
-			}
-			if (!(ConnectionStringBuilder["Data Source"] is string) ||
-				(ConnectionStringBuilder["Data Source"] as string).Length == 0)
-			{
-				return false;
-			}
-			return true;
-		}
-	}
+    public override bool IsComplete => base.IsComplete && ConnectionStringBuilder["Data Source"] is string { Length: > 0 };
 
-	public override void Test()
+    public override void Test()
 	{
-		string dataSource = ConnectionStringBuilder["Data Source"] as string;
-		if (dataSource == null || dataSource.Length == 0)
-		{
-			throw new InvalidOperationException(Strings.OleDBAccessConnectionProperties_MustSpecifyDataSource);
-		}
-		base.Test();
+        if (ConnectionStringBuilder["Data Source"] is not string { Length: > 0})
+        {
+            throw new InvalidOperationException(Strings.OleDBAccessConnectionProperties_MustSpecifyDataSource);
+        }
+        base.Test();
 	}
 
 	public override string ToDisplayString()
 	{
-		string savedPassword = null;
+		string? savedPassword = null;
 		if (ConnectionStringBuilder.ContainsKey("Jet OLEDB:Database Password") &&
 			ConnectionStringBuilder.ShouldSerialize("Jet OLEDB:Database Password"))
 		{
@@ -447,30 +367,28 @@ public class OleDBAccessConnectionProperties : OleDBSpecializedConnectionPropert
 			ConnectionStringBuilder.Remove("Jet OLEDB:Database Password");
 		}
 		string displayString = base.ToDisplayString();
-		if (savedPassword != null)
+		if (!string.IsNullOrWhiteSpace(savedPassword))
 		{
 			ConnectionStringBuilder["Jet OLEDB:Database Password"] = savedPassword;
 		}
 		return displayString;
 	}
 
-	protected override PropertyDescriptorCollection GetProperties(Attribute[] attributes)
+	protected override PropertyDescriptorCollection GetProperties(Attribute[]? attributes)
 	{
 		PropertyDescriptorCollection descriptors = base.GetProperties(attributes);
 		if (Access12ProviderRegistered)
 		{
-			DynamicPropertyDescriptor providerDescriptor = descriptors.Find("Provider", true) as DynamicPropertyDescriptor;
-			if (providerDescriptor != null)
-			{
-				if (!DisableProviderSelection)
-				{
-					providerDescriptor.SetIsReadOnly(false);
-				}
-				providerDescriptor.SetConverterType(typeof(JetProviderConverter));
-				providerDescriptor.AddValueChanged(ConnectionStringBuilder, new EventHandler(OnProviderChanged));
-			}
-			PropertyDescriptor dataSourceDescriptor = descriptors.Find("DataSource", true);
-			if (dataSourceDescriptor != null)
+            if (descriptors.Find("Provider", true) is DynamicPropertyDescriptor providerDescriptor)
+            {
+                if (!DisableProviderSelection)
+                {
+                    providerDescriptor.SetIsReadOnly(false);
+                }
+                providerDescriptor.SetConverterType(typeof(JetProviderConverter));
+                providerDescriptor.AddValueChanged(ConnectionStringBuilder, new EventHandler(OnProviderChanged));
+            }
+			if (descriptors.Find("DataSource", true) is PropertyDescriptor dataSourceDescriptor)
 			{
 				int index = descriptors.IndexOf(dataSourceDescriptor);
 				PropertyDescriptor[] descriptorArray = new PropertyDescriptor[descriptors.Count];
@@ -480,8 +398,7 @@ public class OleDBAccessConnectionProperties : OleDBSpecializedConnectionPropert
 				descriptors = new PropertyDescriptorCollection(descriptorArray, true);
 			}
 		}
-		PropertyDescriptor passwordDescriptor = descriptors.Find("Jet OLEDB:Database Password", true);
-		if (passwordDescriptor != null)
+		if (descriptors.Find("Jet OLEDB:Database Password", true) is PropertyDescriptor passwordDescriptor)
 		{
 			int index = descriptors.IndexOf(passwordDescriptor);
 			PropertyDescriptor[] descriptorArray = new PropertyDescriptor[descriptors.Count];
@@ -498,18 +415,15 @@ public class OleDBAccessConnectionProperties : OleDBSpecializedConnectionPropert
 		{
 			if (!_gotAccess12ProviderRegistered)
 			{
-				Microsoft.Win32.RegistryKey key = null;
+				Win32.RegistryKey? key = null;
 				try
 				{
-					key = Microsoft.Win32.Registry.ClassesRoot.OpenSubKey("Microsoft.ACE.OLEDB.12.0");
-					_access12ProviderRegistered = (key != null);
+					key = Win32.Registry.ClassesRoot.OpenSubKey("Microsoft.ACE.OLEDB.12.0");
+					_access12ProviderRegistered = (key is not null);
 				}
 				finally
 				{
-					if (key != null)
-					{
-						key.Close();
-					}
+					key?.Close();
 				}
 				_gotAccess12ProviderRegistered = true;
 			}
@@ -525,25 +439,15 @@ public class OleDBAccessConnectionProperties : OleDBSpecializedConnectionPropert
 		{
 		}
 
-		public override bool GetStandardValuesSupported(ITypeDescriptorContext context)
-		{
-			return true;
-		}
+        public override bool GetStandardValuesSupported(ITypeDescriptorContext? context) => true;
 
-		public override bool GetStandardValuesExclusive(ITypeDescriptorContext context)
-		{
-			return true;
-		}
+        public override bool GetStandardValuesExclusive(ITypeDescriptorContext? context) => true;
 
-		public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext context)
-		{
-			return new StandardValuesCollection(new string[] {
-				"Microsoft.Jet.OLEDB.4.0", "Microsoft.ACE.OLEDB.12.0"
-			});
-		}
+        public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext? context) => new StandardValuesCollection(_oleDBProvders);
+        private static readonly string[] _oleDBProvders = ["Microsoft.Jet.OLEDB.4.0", "Microsoft.ACE.OLEDB.12.0"];
 	}
 
-	private void OnProviderChanged(object sender, EventArgs e)
+	private void OnProviderChanged(object? sender, EventArgs e)
 	{
 		if (Access12ProviderRegistered)
 		{
@@ -551,24 +455,23 @@ public class OleDBAccessConnectionProperties : OleDBSpecializedConnectionPropert
 		}
 	}
 
-	private void OnDataSourceChanged(object sender, EventArgs e)
+	private void OnDataSourceChanged(object? sender, EventArgs e)
 	{
 		if (Access12ProviderRegistered && !_userChangedProvider)
 		{
-			string dataSource = this["Data Source"] as string;
-			if (dataSource != null)
-			{
-				dataSource = dataSource.Trim().ToUpperInvariant();
-				if (dataSource.EndsWith(".ACCDB", StringComparison.Ordinal))
-				{
-					base["Provider"] = "Microsoft.ACE.OLEDB.12.0";
-				}
-				else
-				{
-					base["Provider"] = "Microsoft.Jet.OLEDB.4.0";
-				}
-			}
-		}
+            if (this["Data Source"] is string dataSource)
+            {
+                dataSource = dataSource.Trim().ToUpperInvariant();
+                if (dataSource.EndsWith(".ACCDB", StringComparison.Ordinal))
+                {
+                    base["Provider"] = "Microsoft.ACE.OLEDB.12.0";
+                }
+                else
+                {
+                    base["Provider"] = "Microsoft.Jet.OLEDB.4.0";
+                }
+            }
+        }
 	}
 
 	private bool _userChangedProvider;

@@ -1,22 +1,24 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using System.Windows;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.Data.ConnectionUI.Dialog.ViewModels;
 
-public partial class DataConnectionViewModel : ObservableObject
+internal partial class DataConnectionViewModel : ObservableObject
 {
     public ObservableCollection<DataSource> DataSources { get; set; }
 
     [ObservableProperty]
-    public partial DataSource SelectedDataSource { get; set; }
+    public partial DataSource? SelectedDataSource { get; set; }
 
     [ObservableProperty]
-    public partial DataProvider SelectedDataProvider { get; set; }
+    public partial DataProvider? SelectedDataProvider { get; set; }
 
-    [ObservableProperty]
-    public partial DataSource UnspecifiedDataSource { get; set; }
+    [MemberNotNullWhen(true, nameof(ConnectionString))]
+    public bool ConnectionStringInitialized => !string.IsNullOrWhiteSpace(ConnectionString);
+
+    public string? ConnectionString { get; private set; }
 
     public DataConnectionViewModel(DataConnectionConfiguration.IDataConnectionConfiguration config)
     {
@@ -24,17 +26,26 @@ public partial class DataConnectionViewModel : ObservableObject
         SelectedDataSource = DataSources.FirstOrDefault();
     }
 
-    partial void OnSelectedDataSourceChanged(DataSource value)
+    partial void OnSelectedDataSourceChanged(DataSource? value)
     {
-        SelectedDataProvider = value.Providers.FirstOrDefault();
+        SelectedDataProvider = value?.Providers.FirstOrDefault();
+    }
+
+    private bool CanOpenConnectionProperties() => SelectedDataProvider is not null;
+
+    [RelayCommand(CanExecute = nameof(CanOpenConnectionProperties))]
+    private void OpenConnectionProperties()
+    {
+        if (SelectedDataProvider is not null)
+        {
+            var connectionControl = SelectedDataProvider.GetConnectionControl(SelectedDataSource);
+            ConnectionString = ConnectionPropertiesDialog.ShowDialog(connectionControl);
+        }
     }
 
     [RelayCommand]
-    private void OpenConnectionProperties()
+    private void About()
     {
-        var connectionControl = SelectedDataProvider.CreateConnectionControl(SelectedDataSource);
-        var window = new Window();
-        window.Content = UiMapper.GetUserControl(connectionControl);
-        window.Show();
+        RTLAwareMessageBox.Show("About", "Modified version by Karen Payne. Updated to WPF .NET 11 by Anatoly Kusov.", System.Windows.MessageBoxImage.None);
     }
 }

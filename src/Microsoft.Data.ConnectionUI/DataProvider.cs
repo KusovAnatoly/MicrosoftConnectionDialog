@@ -73,7 +73,7 @@ public sealed class DataProvider
         return Description;
     }
 
-    public IDataConnectionControl? CreateConnectionControl(
+    public IDataConnectionControl GetConnectionControl(
         DataSource? dataSource = null)
     {
         if (!TryGetType(
@@ -81,7 +81,7 @@ public sealed class DataProvider
             dataSource,
             out var controlType))
         {
-            return null;
+            throw new InvalidOperationException("");
         }
 
         return Activator.CreateInstance(controlType)

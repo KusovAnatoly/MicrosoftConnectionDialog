@@ -5,7 +5,6 @@
 //------------------------------------------------------------------------------
 
 using System.Diagnostics;
-using System.Text;
 
 namespace Microsoft.Data.ConnectionUI;
 
@@ -20,22 +19,10 @@ public class OdbcConnectionProperties : AdoDotNetConnectionProperties
 	{
 	}
 
-	public override bool IsComplete
-	{
-		get
-		{
-			if ((!(ConnectionStringBuilder["DSN"] is string) ||
-				(ConnectionStringBuilder["DSN"] as string).Length == 0) &&
-				(!(ConnectionStringBuilder["DRIVER"] is string) ||
-				(ConnectionStringBuilder["DRIVER"] as string).Length == 0))
-			{
-				return false;
-			}
-			return true;
-		}
-	}
+    public override bool IsComplete => ConnectionStringBuilder["DSN"] is string { Length: > 0 } &&
+								       ConnectionStringBuilder["DRIVER"] is string { Length: > 0 };
 
-	public static List<string> SqlNativeClientDrivers
+    public static List<string> SqlNativeClientDrivers
 	{
 		get
 		{
@@ -83,8 +70,8 @@ public class OdbcConnectionProperties : AdoDotNetConnectionProperties
 			succeed = NativeMethods.SQLGetInstalledDrivers(lpszBuf, lpszBuf.Length, ref pcbBufOut);
 
 			while (succeed && pcbBufOut > 0 &&
-				pcbBufOut == (lpszBuf.Length - 1) &&
-				lpszBuf.Length < Math.Pow(2, 30) /* sanity limit */ )
+				   pcbBufOut == (lpszBuf.Length - 1) &&
+				   lpszBuf.Length < Math.Pow(2, 30) /* sanity limit */ )
 			{
 				// The managed buffer needs to be bigger
 				lpszBuf = new char[lpszBuf.Length * 2];

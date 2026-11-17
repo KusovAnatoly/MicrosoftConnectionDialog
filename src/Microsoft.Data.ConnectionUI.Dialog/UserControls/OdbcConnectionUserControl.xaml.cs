@@ -22,6 +22,11 @@ public partial class OdbcConnectionUserControl : UserControl, IOdbcConnectionCon
         InitializeComponent();
     }
 
+    public string GetConnection()
+    {
+        throw new NotImplementedException();
+    }
+
     public void Initialize(IDataConnectionProperties connectionProperties)
     {
         throw new NotImplementedException();

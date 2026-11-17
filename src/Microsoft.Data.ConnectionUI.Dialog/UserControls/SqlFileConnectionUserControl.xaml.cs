@@ -9,6 +9,11 @@ internal partial class SqlFileConnectionUserControl : UserControl, ISqlServerFil
         InitializeComponent();
     }
 
+    public string GetConnection()
+    {
+        throw new NotImplementedException();
+    }
+
     public void Initialize(IDataConnectionProperties connectionProperties)
     {
         throw new NotImplementedException();

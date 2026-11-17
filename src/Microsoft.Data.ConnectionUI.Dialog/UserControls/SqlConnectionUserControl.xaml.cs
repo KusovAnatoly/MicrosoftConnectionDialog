@@ -22,6 +22,11 @@ public partial class SqlConnectionUserControl : UserControl, ISqlServerConnectio
         InitializeComponent();
     }
 
+    public string GetConnection()
+    {
+        throw new NotImplementedException();
+    }
+
     public void Initialize(IDataConnectionProperties connectionProperties)
     {
         throw new NotImplementedException();

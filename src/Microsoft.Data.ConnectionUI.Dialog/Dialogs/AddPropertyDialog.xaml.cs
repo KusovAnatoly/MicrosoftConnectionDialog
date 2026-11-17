@@ -5,14 +5,14 @@ namespace Microsoft.Data.ConnectionUI.Dialog;
 /// <summary>
 /// Interaction logic for AddPropertyDialog.xaml
 /// </summary>
-public partial class AddPropertyDialog : Window
+internal partial class AddPropertyDialog : Window
 {
-    public AddPropertyDialog()
+    internal AddPropertyDialog()
     {
         InitializeComponent();
     }
 
-    public string PropertyName => PropertyTextBox.Text;
+    internal string PropertyName => PropertyTextBox.Text;
         
     private void CancelButton_Click(object sender, RoutedEventArgs e)
     {

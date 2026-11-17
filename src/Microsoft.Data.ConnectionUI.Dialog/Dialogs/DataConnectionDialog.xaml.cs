@@ -1,11 +1,12 @@
 ﻿using Microsoft.Data.ConnectionUI.Dialog.ViewModels;
+using Microsoft.Data.DataConnectionConfiguration;
 using System.Windows;
 
 namespace Microsoft.Data.ConnectionUI.Dialog;
 
-public partial class DataConnectionDialog : Window
+internal partial class DataConnectionDialog : Window
 {
-    public DataConnectionViewModel ViewModel { get; private set; }
+    internal DataConnectionViewModel ViewModel { get; private set; }
     private DataConnectionDialog(DataConnectionViewModel viewModel)
     {
         InitializeComponent();
@@ -13,11 +14,22 @@ public partial class DataConnectionDialog : Window
         DataContext = viewModel;
     }
 
-    public static string ShowDialog(DataConnectionConfiguration.IDataConnectionConfiguration config)
+    private new string ShowDialog()
+    {
+        base.ShowDialog();
+        if (ViewModel.ConnectionStringInitialized)
+        {
+            return ViewModel.ConnectionString;
+        }
+        throw new Exception("User did not set up connection string");
+    }
+
+    internal static string ShowDialog(IDataConnectionConfiguration config)
     {
         var viewModel = new DataConnectionViewModel(config);
         var window = new DataConnectionDialog(viewModel);
-        bool? result = window.ShowDialog();
-        return result == true ? "" : "";
+        return window.ShowDialog();
     }
+
+    private void Button_Click(object sender, RoutedEventArgs e) => Close();
 }

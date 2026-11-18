@@ -1,0 +1,44 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Karen Payne Code/">
+    <Project Path="DatabaseConnector/DatabaseConnector.csproj" />
+    <Project Path="WindowsFormsApplication1_cs/WindowsFormsApplication1_cs.csproj" Id="0233565f-75db-4821-8246-ddcac8f45f88" />
+  </Folder>
+  <Folder Name="/Microsoft code/">
+    <Project Path="ConnectionUI/Microsoft.Data.ConnectionUI.csproj" Id="139729cd-0f06-48e8-9f4a-08e78bb6575f">
+      <BuildType Project="Debug" />
+      <Platform Solution="Release|x64" Project="x64" />
+      <Platform Solution="Release|x86" Project="x86" />
+    </Project>
+    <Project Path="ConnectionUIDialog/Microsoft.Data.ConnectionUI.Dialog.csproj" Id="05c97f8d-b7cf-4cab-b81c-0994a70d90ca">
+      <BuildType Project="Debug" />
+      <Platform Solution="Release|x64" Project="x64" />
+      <Platform Solution="Release|x86" Project="x86" />
+    </Project>
+    <Project Path="Microsoft.Data.DataConnectionConfiguration/Microsoft.Data.DataConnectionConfiguration.csproj" Id="3067acbb-093b-4179-b531-11a1e7f69432" />
+    <Project Path="Sample.VB/Microsoft.Data.ConnectionUI.Sample.VB.vbproj">
+      <Build Solution="*|x64" Project="false" />
+      <Build Solution="*|x86" Project="false" />
+    </Project>
+    <Project Path="Sample/Microsoft.Data.ConnectionUI.Sample.csproj">
+      <Platform Solution="*|x86" Project="x86" />
+      <Platform Solution="Release|x64" Project="x64" />
+    </Project>
+    <Project Path="SqlCeDataProvider/Microsoft.Data.ConnectionUI.SqlCeDataProvider.csproj" Id="1cc9d080-c06d-4202-a14b-14a9cc7f7f31">
+      <Platform Solution="*|x86" Project="x86" />
+      <Platform Solution="Release|x64" Project="x64" />
+    </Project>
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="readme.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Microsoft.Data.ConnectionUI.Dialog/Microsoft.Data.ConnectionUI.Dialog.csproj" />
+    <Project Path="src/Microsoft.Data.ConnectionUI/Microsoft.Data.ConnectionUI.csproj" />
+    <Project Path="src/Microsoft.Data.DataConnectionConfiguration/Microsoft.Data.DataConnectionConfiguration.csproj" />
+  </Folder>
+</Solution>

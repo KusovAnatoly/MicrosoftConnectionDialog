@@ -117,16 +117,16 @@ internal static class HelpUtils
         return source?.Handle ?? IntPtr.Zero;
     }
 
-    public static UserControl GetUserControl(IDataConnectionControl control)
+    public static UserControl GetUserControl(ControlType type)
     {
-        return control switch
+        return type switch
         {
-            IAccessConnectionControl => new AccessConnectionUserControl(),
-            IOleDBConnectionControl => new OleDBConnectionUserControl(),
-            IOdbcConnectionControl => new OdbcConnectionUserControl(),
-            IOracleConnectionControl => new OracleConnectionUserControl(),
-            ISqlServerConnectionControl => new SqlConnectionUserControl(),
-            ISqlServerFileConnectionControl => new SqlFileConnectionUserControl(),
+            ControlType.Access => new AccessConnectionUserControl(),
+            ControlType.OleDB => new OleDBConnectionUserControl(),
+            ControlType.Odbc => new OdbcConnectionUserControl(),
+            ControlType.Oracle => new OracleConnectionUserControl(),
+            ControlType.SqlServer => new SqlServerConnectionUserControl(),
+            ControlType.SqlServerFile => new SqlServerFileConnectionUserControl(),
             _ => new OdbcConnectionUserControl()
         };
     }

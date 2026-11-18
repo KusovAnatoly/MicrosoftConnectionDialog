@@ -13,18 +13,18 @@ using System.Windows.Shapes;
 
 namespace Microsoft.Data.ConnectionUI.Dialog.UserControls;
 /// <summary>
-/// Interaction logic for SqlConnectionUserControl.xaml
+/// Interaction logic for SqlServerConnectionUserControl.xaml
 /// </summary>
-public partial class SqlConnectionUserControl : UserControl, ISqlServerConnectionControl
+public partial class SqlServerConnectionUserControl : UserControl, ISqlServerConnectionControl
 {
-    public SqlConnectionUserControl()
+    public SqlServerConnectionUserControl()
     {
         InitializeComponent();
     }
 
-    public string GetConnection()
+    public string GetConnectionString()
     {
-        throw new NotImplementedException();
+        return string.Empty;
     }
 
     public void Initialize(IDataConnectionProperties connectionProperties)

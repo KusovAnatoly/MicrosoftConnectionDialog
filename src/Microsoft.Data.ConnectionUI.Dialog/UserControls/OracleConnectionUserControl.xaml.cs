@@ -11,7 +11,7 @@ public partial class OracleConnectionUserControl : UserControl, IOracleConnectio
         InitializeComponent();
     }
 
-    public string GetConnection()
+    public string GetConnectionString()
     {
         throw new NotImplementedException();
     }

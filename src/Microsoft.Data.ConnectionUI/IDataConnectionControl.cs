@@ -4,5 +4,5 @@ public interface IDataConnectionControl
 {
     void Initialize(IDataConnectionProperties connectionProperties);
     void LoadProperties();
-    string GetConnection();
+    string GetConnectionString();
 }

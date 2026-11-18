@@ -12,7 +12,7 @@ public partial class AccessConnectionUserControl : UserControl, IAccessConnectio
         InitializeComponent();
     }
 
-    public string GetConnection()
+    public string GetConnectionString()
     {
         throw new NotImplementedException();
     }

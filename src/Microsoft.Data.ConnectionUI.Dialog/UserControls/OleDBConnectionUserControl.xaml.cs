@@ -22,7 +22,7 @@ public partial class OleDBConnectionUserControl : UserControl, IOleDBConnectionC
         InitializeComponent();
     }
 
-    public string GetConnection()
+    public string GetConnectionString()
     {
         throw new NotImplementedException();
     }

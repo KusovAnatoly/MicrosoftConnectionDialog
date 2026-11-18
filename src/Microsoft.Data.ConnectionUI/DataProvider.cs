@@ -8,11 +8,14 @@ namespace Microsoft.Data.ConnectionUI;
 
 using Microsoft.Data.ConnectionUI.Resources;
 using System.Collections.ObjectModel;
+using static System.Net.Mime.MediaTypeNames;
+
+public enum ControlType { Odbc, OleDB, Access, SqlServer, SqlServerFile, Oracle }
 
 public sealed class DataProvider
 {
     private readonly IReadOnlyDictionary<string, string> _dataSourceDescriptions;
-    private readonly IReadOnlyDictionary<string, Type> _connectionControlTypes;
+    private readonly IReadOnlyDictionary<string, ControlType> _connectionControlTypes;
     private readonly IReadOnlyDictionary<string, Type> _connectionPropertiesTypes;
 
     public DataProvider(
@@ -22,7 +25,7 @@ public sealed class DataProvider
         string? description = null,
         Type? targetConnectionType = null,
         IDictionary<string, string>? dataSourceDescriptions = null,
-        IDictionary<string, Type>? connectionControlTypes = null,
+        IDictionary<string, ControlType>? connectionControlTypes = null,
         IDictionary<string, Type>? connectionPropertiesTypes = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(name);
@@ -73,7 +76,7 @@ public sealed class DataProvider
         return Description;
     }
 
-    public IDataConnectionControl GetConnectionControl(
+    public ControlType GetConnectionControl(
         DataSource? dataSource = null)
     {
         if (!TryGetType(
@@ -84,8 +87,7 @@ public sealed class DataProvider
             throw new InvalidOperationException("");
         }
 
-        return Activator.CreateInstance(controlType)
-            as IDataConnectionControl;
+        return controlType;
     }
 
     public IDataConnectionProperties? CreateConnectionProperties(
@@ -101,6 +103,20 @@ public sealed class DataProvider
 
         return Activator.CreateInstance(propertiesType)
             as IDataConnectionProperties;
+    }
+
+    private static bool TryGetType(
+        IReadOnlyDictionary<string, ControlType> types,
+        DataSource? dataSource,
+        out ControlType type)
+    {
+        if (dataSource is not null &&
+            types.TryGetValue(dataSource.Name, out type!))
+        {
+            return true;
+        }
+
+        return types.TryGetValue(string.Empty, out type!);
     }
 
     private static bool TryGetType(
@@ -152,16 +168,16 @@ public sealed class DataProvider
                 Strings.DataProvider_Sql_FileDataSource_Description
         };
 
-        var controls = new Dictionary<string, Type>
+        var controls = new Dictionary<string, ControlType>
         {
             [DataSource.MicrosoftSqlServerName] =
-                typeof(ISqlServerConnectionControl),
+                ControlType.SqlServer,
 
             [DataSource.MicrosoftSqlServerFileName] =
-                typeof(ISqlServerFileConnectionControl),
+                ControlType.SqlServerFile,
 
             [string.Empty] =
-                typeof(ISqlServerConnectionControl)
+                ControlType.SqlServer
         };
 
         var properties = new Dictionary<string, Type>
@@ -192,10 +208,10 @@ public sealed class DataProvider
                 Strings.DataProvider_Oracle_DataSource_Description
         };
 
-        var controls = new Dictionary<string, Type>
+        var controls = new Dictionary<string, ControlType>
         {
             [string.Empty] =
-                typeof(IOracleConnectionControl)
+                ControlType.Oracle,
         };
 
         var properties = new Dictionary<string, Type>
@@ -229,19 +245,19 @@ public sealed class DataProvider
                 Strings.DataProvider_OleDB_AccessDataSource_Description
         };
 
-        var controls = new Dictionary<string, Type>
+        var controls = new Dictionary<string, ControlType>
         {
             [DataSource.MicrosoftSqlServerName] =
-                typeof(ISqlServerConnectionControl),
+                ControlType.SqlServer,
 
             [DataSource.OracleName] =
-                typeof(IOracleConnectionControl),
+                ControlType.Oracle,
 
             [DataSource.MicrosoftAccessName] =
-                typeof(IAccessConnectionControl),
+                ControlType.Access,
 
             [string.Empty] =
-                typeof(IOleDBConnectionControl)
+                ControlType.OleDB,
         };
 
         var properties = new Dictionary<string, Type>
@@ -278,10 +294,10 @@ public sealed class DataProvider
                 Strings.DataProvider_Odbc_DataSource_Description
         };
 
-        var controls = new Dictionary<string, Type>
+        var controls = new Dictionary<string, ControlType>
         {
             [string.Empty] =
-                typeof(IOdbcConnectionControl)
+                ControlType.Odbc,
         };
 
         var properties = new Dictionary<string, Type>

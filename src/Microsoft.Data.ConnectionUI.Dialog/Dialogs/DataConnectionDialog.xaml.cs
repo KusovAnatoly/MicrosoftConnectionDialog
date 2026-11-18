@@ -14,17 +14,17 @@ internal partial class DataConnectionDialog : Window
         DataContext = viewModel;
     }
 
-    private new string ShowDialog()
+    private new string? ShowDialog()
     {
         base.ShowDialog();
         if (ViewModel.ConnectionStringInitialized)
         {
             return ViewModel.ConnectionString;
         }
-        throw new Exception("User did not set up connection string");
+        return null;
     }
 
-    internal static string ShowDialog(IDataConnectionConfiguration config)
+    internal static string? ShowDialog(IDataConnectionConfiguration config)
     {
         var viewModel = new DataConnectionViewModel(config);
         var window = new DataConnectionDialog(viewModel);

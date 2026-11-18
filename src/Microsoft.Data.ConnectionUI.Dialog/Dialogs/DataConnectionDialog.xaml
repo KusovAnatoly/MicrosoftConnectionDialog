@@ -55,10 +55,11 @@
               ColumnDefinitions="* *"
               Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
 
-            <CheckBox Grid.Column="0"
+            <CheckBox x:Name="SaveCheckBox"
+                      Grid.Column="0"
                       HorizontalAlignment="Left"
                       Content="Always use this selection"
-                      Margin="16"/>
+                      Margin="16" />
 
             <StackPanel Grid.Column="1"
                         Orientation="Horizontal"

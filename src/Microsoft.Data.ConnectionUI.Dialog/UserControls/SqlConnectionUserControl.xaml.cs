@@ -15,7 +15,7 @@ namespace Microsoft.Data.ConnectionUI.Dialog.UserControls;
 /// <summary>
 /// Interaction logic for SqlServerConnectionUserControl.xaml
 /// </summary>
-public partial class SqlServerConnectionUserControl : UserControl, ISqlServerConnectionControl
+public partial class SqlServerConnectionUserControl : UserControl, IDataConnectionControl
 {
     public SqlServerConnectionUserControl()
     {

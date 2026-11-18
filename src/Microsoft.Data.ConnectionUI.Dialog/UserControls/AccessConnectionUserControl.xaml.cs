@@ -5,7 +5,7 @@ namespace Microsoft.Data.ConnectionUI.Dialog.UserControls;
 /// <summary>
 /// Interaction logic for AccessConnectionUserControl.xaml
 /// </summary>
-public partial class AccessConnectionUserControl : UserControl, IAccessConnectionControl
+public partial class AccessConnectionUserControl : UserControl, IDataConnectionControl
 {
     public AccessConnectionUserControl()
     {

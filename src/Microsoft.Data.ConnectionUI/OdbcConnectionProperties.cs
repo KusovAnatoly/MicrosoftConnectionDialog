@@ -8,7 +8,6 @@ using System.Diagnostics;
 
 namespace Microsoft.Data.ConnectionUI;
 
-public interface IOdbcConnectionControl : IDataConnectionControl;
 
 public class OdbcConnectionProperties : AdoDotNetConnectionProperties
 {

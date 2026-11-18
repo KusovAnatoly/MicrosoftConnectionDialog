@@ -11,8 +11,6 @@ using System.Data.Common;
 
 namespace Microsoft.Data.ConnectionUI;
 
-public interface ISqlServerConnectionControl : IDataConnectionControl;
-public interface ISqlServerFileConnectionControl : IDataConnectionControl;
 public class SqlConnectionProperties : AdoDotNetConnectionProperties
 {
     public SqlConnectionProperties()

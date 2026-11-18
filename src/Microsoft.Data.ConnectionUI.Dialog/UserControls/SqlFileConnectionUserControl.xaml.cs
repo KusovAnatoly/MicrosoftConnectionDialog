@@ -2,7 +2,7 @@
 
 namespace Microsoft.Data.ConnectionUI.Dialog.UserControls;
 
-internal partial class SqlServerFileConnectionUserControl : UserControl, ISqlServerFileConnectionControl
+internal partial class SqlServerFileConnectionUserControl : UserControl, IDataConnectionControl
 {
     public SqlServerFileConnectionUserControl()
     {

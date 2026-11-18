@@ -6,8 +6,6 @@
 
 namespace Microsoft.Data.ConnectionUI;
 
-public interface IOracleConnectionControl : IDataConnectionControl;
-
 public class OracleConnectionProperties : AdoDotNetConnectionProperties
 {
 	public OracleConnectionProperties()

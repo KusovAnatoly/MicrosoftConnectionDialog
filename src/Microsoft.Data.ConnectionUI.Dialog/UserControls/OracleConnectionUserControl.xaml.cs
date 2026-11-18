@@ -4,7 +4,7 @@ namespace Microsoft.Data.ConnectionUI.Dialog.UserControls;
 /// <summary>
 /// Interaction logic for OracleConnectionUserControl.xaml
 /// </summary>
-public partial class OracleConnectionUserControl : UserControl, IOracleConnectionControl
+public partial class OracleConnectionUserControl : UserControl, IDataConnectionControl
 {
     public OracleConnectionUserControl()
     {

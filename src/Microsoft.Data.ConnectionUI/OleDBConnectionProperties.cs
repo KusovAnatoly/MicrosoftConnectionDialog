@@ -11,8 +11,6 @@ using System.Diagnostics;
 
 namespace Microsoft.Data.ConnectionUI;
 
-public interface IOleDBConnectionControl : IDataConnectionControl;
-public interface IAccessConnectionControl : IDataConnectionControl;
 public class OleDBConnectionProperties : AdoDotNetConnectionProperties
 {
 	public OleDBConnectionProperties()

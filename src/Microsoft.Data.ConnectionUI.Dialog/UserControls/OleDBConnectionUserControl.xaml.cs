@@ -15,7 +15,7 @@ namespace Microsoft.Data.ConnectionUI.Dialog.UserControls;
 /// <summary>
 /// Interaction logic for OleDBConnectionUserControl.xaml
 /// </summary>
-public partial class OleDBConnectionUserControl : UserControl, IOleDBConnectionControl
+public partial class OleDBConnectionUserControl : UserControl, IDataConnectionControl
 {
     public OleDBConnectionUserControl()
     {

@@ -11,6 +11,7 @@ internal partial class ConnectionPropertiesDialog : Window
     private ConnectionPropertiesDialog(UserControl userControl)
     {
         InitializeComponent();
+        Grid.SetRow(userControl, 1);
         RootGrid.Children.Add(userControl);
     }
 
@@ -20,6 +21,11 @@ internal partial class ConnectionPropertiesDialog : Window
         var dialog = new ConnectionPropertiesDialog(userControl);
         dialog.ShowDialog();
         return ((IDataConnectionControl)dialog.Content).GetConnectionString();
+    }
+
+    private void ChangeButton_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
     }
 
     private void CancelButton_Click(object sender, RoutedEventArgs e)

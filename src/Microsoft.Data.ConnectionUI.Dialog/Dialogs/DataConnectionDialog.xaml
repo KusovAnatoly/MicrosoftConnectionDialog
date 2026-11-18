@@ -86,10 +86,12 @@
                     </Button.Content>
                 </Button>
 
-                <Button Content="OK"
+                <Button x:Name="OkButton"
+                        Content="OK"
                         MinWidth="80"
                         Margin="8,0"
-                        Command="{Binding OpenConnectionPropertiesCommand}"/>
+                        Command="{Binding OpenConnectionPropertiesCommand}"
+                        Click="OkButton_Click"/>
 
                 <Button Content="Cancel"
                         MinWidth="80"

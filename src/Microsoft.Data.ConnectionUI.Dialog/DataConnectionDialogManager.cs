@@ -1,4 +1,4 @@
-﻿ using Microsoft.Data.ConnectionUI.Dialog;
+﻿using Microsoft.Data.ConnectionUI.Dialog;
 using Microsoft.Data.DataConnectionConfiguration;
 
 namespace Microsoft.Data.ConnectionUI;
@@ -14,7 +14,7 @@ public class DataConnectionDialogManager
 
     private string? Execute()
     {
-        return DataConnectionDialog.ShowDialog(_config);
+        return DataConnectionDialog.Show(_config);
     }
 
     public static string? Show(IDataConnectionConfiguration config)

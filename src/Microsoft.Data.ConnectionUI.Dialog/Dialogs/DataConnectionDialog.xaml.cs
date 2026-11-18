@@ -14,9 +14,9 @@ internal partial class DataConnectionDialog : Window
         DataContext = viewModel;
     }
 
-    private new string? ShowDialog()
+    private new string? Show()
     {
-        base.ShowDialog();
+        base.Show();
         if (ViewModel.ConnectionStringInitialized)
         {
             return ViewModel.ConnectionString;
@@ -24,12 +24,17 @@ internal partial class DataConnectionDialog : Window
         return null;
     }
 
-    internal static string? ShowDialog(IDataConnectionConfiguration config)
+    internal static string? Show(IDataConnectionConfiguration config)
     {
         var viewModel = new DataConnectionViewModel(config);
         var window = new DataConnectionDialog(viewModel);
-        return window.ShowDialog();
+        return window.Show();
     }
 
     private void Button_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void OkButton_Click(object sender, RoutedEventArgs e)
+    {
+        Hide();
+    }
 }

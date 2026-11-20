@@ -14,7 +14,7 @@ public class DataConnectionDialogManager
 
     private string? Execute()
     {
-        return DataConnectionDialog.Show(_config);
+        return DataConnectionDialog.ShowDialog(_config);
     }
 
     public static string? Show(IDataConnectionConfiguration config)

@@ -8,34 +8,41 @@ namespace Microsoft.Data.ConnectionUI.Dialog;
 /// </summary>
 internal partial class ConnectionPropertiesDialog : Window
 {
-    private ConnectionPropertiesDialog(UserControl userControl)
+    private ConnectionPropertiesDialog(UserControl userControl, DataSource dataSource, DataProvider dataProvider)
     {
         InitializeComponent();
         Grid.SetRow(userControl, 1);
         RootGrid.Children.Add(userControl);
+        DataSourceTextBox.Text = $"{dataSource.DisplayName} ({dataProvider.ShortDisplayName})";
     }
 
-    internal static string ShowDialog(ControlType type)
+    internal static ConnectionPropertiesDialog GetDialog(ControlType type, DataSource dataSource, DataProvider dataProvider)
     {
         UserControl userControl = HelpUtils.GetUserControl(type);
-        var dialog = new ConnectionPropertiesDialog(userControl);
-        dialog.ShowDialog();
-        return ((IDataConnectionControl)dialog.Content).GetConnectionString();
+        return new ConnectionPropertiesDialog(userControl, dataSource, dataProvider);
+    }
+
+    public new string ShowDialog()
+    {
+        base.ShowDialog();
+        return string.Empty;
     }
 
     private void ChangeButton_Click(object sender, RoutedEventArgs e)
     {
         Close();
+        Owner.ShowDialog();
     }
 
     private void CancelButton_Click(object sender, RoutedEventArgs e)
     {
         Close();
+        Owner.Close();
     }
 
     private void OkButon_Click(object sender, RoutedEventArgs e)
     {
-
+        Owner.Close();
     }
 
     private void TestButton_Click(object sender, RoutedEventArgs e)

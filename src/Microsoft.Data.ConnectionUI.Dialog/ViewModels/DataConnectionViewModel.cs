@@ -18,7 +18,7 @@ internal partial class DataConnectionViewModel : ObservableObject
     [MemberNotNullWhen(true, nameof(ConnectionString))]
     public bool ConnectionStringInitialized => !string.IsNullOrWhiteSpace(ConnectionString);
 
-    public string? ConnectionString { get; private set; }
+    public string? ConnectionString { get; set; }
 
     public DataConnectionViewModel(DataConnectionConfiguration.IDataConnectionConfiguration config)
     {
@@ -36,11 +36,7 @@ internal partial class DataConnectionViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanOpenConnectionProperties))]
     private void OpenConnectionProperties()
     {
-        if (SelectedDataProvider is not null)
-        {
-            var connectionControl = SelectedDataProvider.GetConnectionControl(SelectedDataSource);
-            ConnectionString = ConnectionPropertiesDialog.ShowDialog(connectionControl);
-        }
+
     }
 
     [RelayCommand]
